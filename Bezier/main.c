@@ -21,7 +21,53 @@ int nbPoints = 0;
 typedef Point Vecteur[MAX_POINTS];
 Vecteur poly;
 
+// Vecteur utilisé pour l'algorithme de DE CASTELJAU
+Vecteur copie;
 
+// déplacement de point de contrôle
+int deplacement_pc = 0;
+int indice_pc = -1;
+
+// Fonction		: interpolationLineaire 
+// Argument(s)	: - p1 : premier Point
+//				  - p1 : deuxième Point
+//				  - t : paramètre d'interpolation [0;1]
+// Résultat		: un nouveau Point
+Point interpolationLineaire(Point p1, Point p2, float t)
+{
+	Point res;
+	res.x = (1.f - t) * p1.x + t * p2.x;
+	res.y = (1.f - t) * p1.y + t * p2.y;
+	return res;
+}
+
+// Fonction	 	: deCasteljau (Algorithme de DE CASTELJAU)
+// Argument(s)	:	- t : paramètre d'interpolation [0;1]
+// Résultat 	:	- p : le point sur la courbe de Bézier au paramètre t
+Point deCasteljau(float t)
+{
+	// copie des points de contrôle
+	for (int i = 0; i < nbPoints; i++)
+	{
+		copie[i].x = poly[i].x;
+		copie[i].y = poly[i].y;
+	}
+
+	// on itère tant qu'il reste plus d'un point
+	int nb = nbPoints;
+	while (nb > 1)
+	{
+		// on interpole chaque point avec le paramètre t
+		for (int i = 0; i < nb - 1; i++)
+		{
+			copie[i] = interpolationLineaire(copie[i], copie[i+1], t);
+		}
+		nb--;
+	}
+
+	// le dernier point restant est le point sur la courbe
+	return copie[0]; 
+} 
 
 /*************************************************************************/
 /* Fonctions de dessin */
@@ -58,7 +104,7 @@ void display()
 	int i;
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	// trac� du polygone de controle
+	// tracé du polygone de controle
 	chooseColor(1,1,1);
 	if (nbPoints == 1) 
 		drawPoint(poly[0].x, poly[0].y);
@@ -69,7 +115,18 @@ void display()
 	}
 
 	// ** Dessiner ici ! **
+	float t_incr = 0.001f;
+	chooseColor(1, 0, 0);
 
+	if (nbPoints > 1)
+	{
+		for (float t = 0.f; t <= 1.f - t_incr; t += t_incr)
+		{
+			Point p1 = deCasteljau(t);
+			Point p2 = deCasteljau(t + t_incr);
+			drawLine(p1.x, p1.y, p2.x, p2.y);
+		}
+	}
 
 	glutSwapBuffers();
 }
@@ -101,7 +158,8 @@ void reshape(int w, int h)
 void mouse(int button, int state, int x, int y)
 {
 	int i;
-	
+
+	// ajout d'un point de contrôle
 	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
 	{
 		printf("Clic at %d %d\n",x,y);
@@ -110,11 +168,43 @@ void mouse(int button, int state, int x, int y)
 		nbPoints++;
 		glutPostRedisplay();
 	}
+
+	// déplacement d'un point de contrôle
+	if (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN)
+	{
+		// recherche du plus proche point
+		float dist2_min = 10000.f;
+		for (int i = 0; i < nbPoints; i++)
+		{
+			float dist2 = (poly[i].x - x) * (poly[i].x - x) + 
+			(poly[i].y - y) * (poly[i].y - y);
+
+			if (dist2 < dist2_min)
+			{
+				dist2_min = dist2;
+				indice_pc = i;
+			}
+		}
+		deplacement_pc = 1;
+	}
+
+	// fin de déplacement d'un point de contrôle
+	if (button == GLUT_RIGHT_BUTTON && state == GLUT_UP)
+	{
+		deplacement_pc = 0;
+		indice_pc = -1;
+	}
 }
 
 /* Evenement : souris bouge */
 void mousemove(int x, int y)
 {
+	if (deplacement_pc == 1)
+	{
+		poly[indice_pc].x = x;
+		poly[indice_pc].y = y;
+		display();
+	}
 }
 
 /*************************************************************************/
@@ -126,15 +216,15 @@ int main(int argc, char *argv[])
 	/* Initialisations globales */
 	glutInit(&argc, argv);
 
-	/* D�finition des attributs de la fenetre OpenGL */
+	/* Définition des attributs de la fenetre OpenGL */
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
 
 	/* Placement de la fenetre */
 	glutInitWindowSize(width, height);
 	glutInitWindowPosition(50, 50);
 	
-	/* Cr�ation de la fenetre */
-    glutCreateWindow("Courbes");
+	/* Création de la fenetre */
+    glutCreateWindow("Courbe de Bézier");
 
 	/* Choix de la fonction d'affichage */
 	glutDisplayFunc(display);
@@ -153,7 +243,7 @@ int main(int argc, char *argv[])
 	/* Boucle principale */
     glutMainLoop();
 
-	/* M�me si glutMainLoop ne rends JAMAIS la main, il faut d�finir le return, sinon
+	/* Même si glutMainLoop ne rends JAMAIS la main, il faut définir le return, sinon
 	le compilateur risque de crier */
     return 0;
 }
