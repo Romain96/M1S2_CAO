@@ -28,6 +28,9 @@ Vecteur copie;
 int deplacement_pc = 0;
 int indice_pc = -1;
 
+// mode d'affichage du polygone de contrôle (points/ligne brisée)
+int draw_strip_line = 1;
+
 // Fonction		: interpolationLineaire 
 // Argument(s)	: - p1 : premier Point
 //				  - p1 : deuxième Point
@@ -106,12 +109,21 @@ void display()
 
 	// tracé du polygone de controle
 	chooseColor(1,1,1);
-	if (nbPoints == 1) 
-		drawPoint(poly[0].x, poly[0].y);
-	else if (nbPoints > 1) 
+
+	if (draw_strip_line)
 	{
-		for (i=0;i<nbPoints-1;i++)
-			drawLine(poly[i].x, poly[i].y, poly[i+1].x, poly[i+1].y);
+		if (nbPoints == 1) 
+			drawPoint(poly[0].x, poly[0].y);
+		else if (nbPoints > 1) 
+		{
+			for (i=0;i<nbPoints-1;i++)
+				drawLine(poly[i].x, poly[i].y, poly[i+1].x, poly[i+1].y);
+		}
+	}
+	else
+	{
+		for (i = 0; i < nbPoints; i++)
+			drawPoint(poly[i].x, poly[i].y);
 	}
 
 	// ** Dessiner ici ! **
@@ -139,6 +151,14 @@ void keyboard(unsigned char keycode, int x, int y)
 	/* touche ECHAP */
 	if (keycode=='z')
 		printf("La touche z a ete enfoncee\n");
+	/* touche v (mode vertex/ligne brisée) */
+	if (keycode == 'v')
+	{
+		if (draw_strip_line == 1)
+			draw_strip_line = 0;
+		else
+			draw_strip_line = 1;
+	}
 
 	glutPostRedisplay();
 }

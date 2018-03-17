@@ -5,7 +5,7 @@ OBJS = $(SRCS:.c=.o)
 CC = gcc
 
 CCINCPATH = -I/usr/X11R6/include
-LDFLAGS = -L/usr/X11R6/lib -lglut -lGL -lm -lGLU
+LDFLAGS = -L/usr/X11R6/lib -lglut -lGL -lm -lGLU -O2
 
 all:$(NAME)
 
